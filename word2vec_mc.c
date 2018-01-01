@@ -78,11 +78,11 @@ long long GetFileSize(char *fname) {
 // wc[i] == the count of context number i
 // wclen is the number of entries in wc (context vocab size)
 void InitUnigramTable(int num_vocabs) {
-    int a, i;
+    int a, i, vi;
     long long normalizer = 0;
     struct vocabulary *v;
     real d1, power = 0.75;
-    for (int vi=0; vi<num_vocabs; ++vi) {
+    for (vi=0; vi<num_vocabs; ++vi) {
         unitables[vi] = (int *)malloc(table_size * sizeof(int));
         v = vocabularies[vi];
         for (a = 0; a < v->vocab_size; a++) normalizer += pow(v->vocab[a].cn, power);
@@ -101,7 +101,8 @@ void InitUnigramTable(int num_vocabs) {
 
 void InitNet(int num_vocabs) {
    long long a, b;
-   for (int i=0; i<num_vocabs; ++i) {
+   int i;
+   for (i=0; i<num_vocabs; ++i) {
        a = posix_memalign((void **)&vecs[i], 128, (long long)vocabularies[i]->vocab_size * layer1_size * sizeof(real));
    if (vecs[i] == NULL) {printf("Memory allocation failed\n"); exit(1);}
    for (b = 0; b < layer1_size; b++) 
@@ -133,7 +134,7 @@ void *TrainModelThread(void *id) {
   //printf("thread %d %lld %lld \n",id, start_offset, end_offset);
   struct vocabulary *wv;
   struct vocabulary *cv;
-  int v1, v2, n1, n2;
+  int v1, v2, n1, n2, i, wi, wj;
   char buf[MAX_STRING];
   real *syn0, *syn1neg;
   for (iter=0; iter < numiters; ++iter) {
@@ -143,7 +144,7 @@ void *TrainModelThread(void *id) {
      printf("thread %d %lld\n", id, ftell(fi));
 
      long long train_words = 0;
-     for (int i=0; i < num_vocabs; ++i) { train_words += vocabularies[i]->word_count; } //TODO?
+     for (i=0; i < num_vocabs; ++i) { train_words += vocabularies[i]->word_count; } //TODO?
      while (1) { //HERE @@@
          // TODO set alpha scheduling based on number of examples read.
          // The conceptual change is the move from word_count to pair_count
@@ -180,8 +181,8 @@ void *TrainModelThread(void *id) {
 
          syn0 = vecs[v1];
          syn1neg = vecs[v2];
-         for (int wi=0; wi < n1; ++wi) {
-             for (int wj=0; wj < n2; ++wj) {
+         for (wi=0; wi < n1; ++wi) {
+             for (wj=0; wj < n2; ++wj) {
                  wrdi = word1_ids[wi];
                  ctxi = word2_ids[wj];
                  word_count++; //TODO ?
@@ -337,14 +338,15 @@ void *TrainModelThread(void *id) {
 
 void TrainModel() {
   long a, b, c, d;
+  int i;
   FILE *fo;
   struct vocabulary *wv;
   file_size = GetFileSize(train_file);
   pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
   printf("Starting training using file %s\n", train_file);
   starting_alpha = alpha;
-  for (int i=0; i<MAX_VOCABS; ++i) vocabularies[i]=0;
-  for (int i=0; i<num_vocabs; ++i) {
+  for (i=0; i<MAX_VOCABS; ++i) vocabularies[i]=0;
+  for (i=0; i<num_vocabs; ++i) {
       char vocab_file[200]; // The filename buffer.
       snprintf(vocab_file, sizeof(char) * 200, "%s%i", vocab_file_base, i);
       vocabularies[i]=ReadVocab(vocab_file);
@@ -357,7 +359,7 @@ void TrainModel() {
   for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, TrainModelThread, (void *)a);
   for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
   // TODO num_vocabs output files
-  for (int i=0; i<num_vocabs; ++i) {
+  for (i=0; i<num_vocabs; ++i) {
       char output_file_name[200];
       snprintf(output_file_name, sizeof(char) * 200, "%s%i", output_file, i);
       fo = fopen(output_file_name, "wb");
