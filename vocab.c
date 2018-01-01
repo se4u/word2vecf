@@ -193,13 +193,33 @@ int ReadWordIndex(struct vocabulary *v, FILE *fin) {
   return SearchVocab(v, word);
 }
 
+// Read until seeing ||| or newline.
+// Read word ids into words_out.
+// Return number of words read.
+int ReadWordsAsIndexes(struct vocabulary *v, int *words_out, FILE *fin) {
+  char word[MAX_STRING];
+  char sep = 0;
+  int i=0;
+  int wid = -1;
+  while (1) {
+      sep = ReadWord(word, fin, MAX_STRING);
+      if (feof(fin)) return -1;
+      if (word[0]=='|' && word[1]=='|' && word[2]=='|') break;
+      wid = SearchVocab(v, word);
+      if (wid < 0) continue;
+      words_out[i] = wid;
+      i++;
+  }
+  return i;
+}
+
 struct vocabulary *ReadVocab(char *vocabfile) {
   long long a, i = 0;
   char c;
   char word[MAX_STRING];
   FILE *fin = fopen(vocabfile, "rb");
   if (fin == NULL) {
-    printf("Vocabulary file not found\n");
+    printf("Vocabulary file [%s] not found.\n", vocabfile);
     exit(1);
   }
   struct vocabulary *v = CreateVocabulary();
