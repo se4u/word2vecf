@@ -79,7 +79,7 @@ void LearnVocabFromTrainFile() {
     EnsureVocabSize(wv);
     EnsureVocabSize(cv);
   }
-  SortAndReduceVocab(wv,min_count);
+  SortAndReduceVocab(wv,1);
   SortAndReduceVocab(cv,min_count);
   printf("WVocab size: %lld\n", wv->vocab_size);
   printf("CVocab size: %lld\n", cv->vocab_size);
@@ -87,7 +87,6 @@ void LearnVocabFromTrainFile() {
   fclose(fin);
   SaveVocab(wv, wvocab_file);
   SaveVocab(cv, cvocab_file);
-  
   /////////////////////////////
   /*
   printf("\nSaved reduced vocabs, writing binary output\n\n");
